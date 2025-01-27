@@ -1,8 +1,8 @@
 import os
 import sys
 from argparse import ArgumentParser
-from src.tools.lm import OpenAIModel_dashscope
-from src.tools.rm import GoogleSearchAli
+from src.tools.custom_openai import CustomOpenAI
+from src.tools.rm import GoogleSearchAli, BingSearch
 from src.tools.mindmap import MindMap
 from src.actions.outline_generation import OutlineGenerationModule
 from src.dataclass.Article import Article
@@ -14,11 +14,17 @@ def main(args):
         'api_key': os.getenv("OPENAI_API_KEY"),
         'temperature': 1.0,
         'top_p': 0.9,
+        'api_base': "https://api.gpt.ge/v1/"
     }
+    
     if args.retriever == 'google':
         rm = GoogleSearchAli(k=args.retrievernum)
+    elif args.retriever == 'bing':
+        rm = BingSearch(bing_search_api_key=os.getenv("SEARCHKEY"), k=args.retrievernum)
+    else:
+        raise ValueError("Unsupported retriever. Use 'google' or 'bing'")
 
-    lm = OpenAIModel_dashscope(model=args.llm, max_tokens=2000, **kwargs)
+    lm = CustomOpenAI(model="gpt-3.5-turbo", max_tokens=2000, **kwargs)
 
     topic = input('Topic: ')
     file_name = topic.replace(' ', '_')

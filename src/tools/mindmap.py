@@ -12,6 +12,8 @@ from typing import Union, List, Tuple, Optional, Dict
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.utils.ArticleTextProcessing import ArticleTextProcessing
+from huggingface_hub import snapshot_download, hf_hub_download
+import shutil
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -222,10 +224,27 @@ class MindMap():
 
     def prepare_table_for_retrieval(self):
         """
-        Prepare collected snippets and URLs for retrieval by encoding the snippets using paraphrase-MiniLM-L6-v2.
-        collected_urls and collected_snippets have corresponding indices.
+        Prepare the table for retrieval by encoding all the text in the table.
         """
-        self.encoder = SentenceTransformer('/mnt/nas-alinlp/xizekun/huggingface_cache/all-MiniLM-L6-v2')
+        try:
+            # 使用本地预下载的模型目录
+            model_path = os.path.join(script_dir, "models", "all-MiniLM-L6-v2")
+            self.encoder = SentenceTransformer(
+                model_path,
+                device="cpu"
+            )
+        except Exception as e:
+            print(f"Error loading local model: {str(e)}")
+            try:
+                # 如果本地模型加载失败，尝试在线加载
+                self.encoder = SentenceTransformer(
+                    'sentence-transformers/all-MiniLM-L6-v2',
+                    device="cpu"
+                )
+            except Exception as e2:
+                print(f"Both local and online loading failed: {str(e2)}")
+                raise e2
+        
         self.collected_urls = []
         self.collected_snippets = []
         seen_urls = set()
